@@ -13,14 +13,22 @@ import (
 
 // ToProto transforms a formatted prometheus rulegroup to a rule group protobuf
 func ToProto(user string, namespace string, rl rulefmt.RuleGroup) *RuleGroupDesc {
-	rg := RuleGroupDesc{
-		Name:      rl.Name,
-		Namespace: namespace,
-		Interval:  time.Duration(rl.Interval),
-		Rules:     formattedRuleToProto(rl.Rules),
-		User:      user,
-		Limit:     int64(rl.Limit),
+	var queryOffset *time.Duration
+	if rl.QueryOffset != nil {
+		d := time.Duration(*rl.QueryOffset)
+		queryOffset = &d
 	}
+
+	rg := RuleGroupDesc{
+		Name:        rl.Name,
+		Namespace:   namespace,
+		Interval:    time.Duration(rl.Interval),
+		QueryOffset: queryOffset,
+		Rules:       formattedRuleToProto(rl.Rules),
+		User:        user,
+		Limit:       int64(rl.Limit),
+	}
+
 	return &rg
 }
 
@@ -43,11 +51,18 @@ func formattedRuleToProto(rls []rulefmt.RuleNode) []*RuleDesc {
 
 // FromProto generates a rulefmt RuleGroup
 func FromProto(rg *RuleGroupDesc) rulefmt.RuleGroup {
+	var queryOffset *model.Duration
+	if rg.QueryOffset != nil {
+		d := model.Duration(*rg.QueryOffset)
+		queryOffset = &d
+	}
+
 	formattedRuleGroup := rulefmt.RuleGroup{
-		Name:     rg.GetName(),
-		Interval: model.Duration(rg.Interval),
-		Rules:    make([]rulefmt.RuleNode, len(rg.GetRules())),
-		Limit:    int(rg.Limit),
+		Name:        rg.GetName(),
+		Interval:    model.Duration(rg.Interval),
+		QueryOffset: queryOffset,
+		Rules:       make([]rulefmt.RuleNode, len(rg.GetRules())),
+		Limit:       int(rg.Limit),
 	}
 
 	for i, rl := range rg.GetRules() {

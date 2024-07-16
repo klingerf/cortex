@@ -101,6 +101,9 @@ type Config struct {
 	ClientTLSConfig grpcclient.Config `yaml:"ruler_client"`
 	// How frequently to evaluate rules by default.
 	EvaluationInterval time.Duration `yaml:"evaluation_interval"`
+	// Offset the default rule evaluation timestamp by the specified duration into
+	// the past to ensure that the underlying metrics have been received.
+	RuleQueryOffset time.Duration `yaml:"rule_query_offset"`
 	// How frequently to poll for updated rules.
 	PollInterval time.Duration `yaml:"poll_interval"`
 	// Path to store rule files for prom manager.
@@ -193,6 +196,7 @@ func (cfg *Config) RegisterFlags(f *flag.FlagSet) {
 	cfg.ExternalURL.URL, _ = url.Parse("") // Must be non-nil
 	f.Var(&cfg.ExternalURL, "ruler.external.url", "URL of alerts return path.")
 	f.DurationVar(&cfg.EvaluationInterval, "ruler.evaluation-interval", 1*time.Minute, "How frequently to evaluate rules")
+	f.DurationVar(&cfg.RuleQueryOffset, "ruler.rule-query-offset", 0, "Offset the default rule evaluation timestamp by the specified duration into the past to ensure that the underlying metrics have been received.")
 	f.DurationVar(&cfg.PollInterval, "ruler.poll-interval", 1*time.Minute, "How frequently to poll for rule changes")
 
 	f.StringVar(&cfg.AlertmanagerURL, "ruler.alertmanager-url", "", "Comma-separated list of URL(s) of the Alertmanager(s) to send notifications to. Each Alertmanager URL is treated as a separate group in the configuration. Multiple Alertmanagers in HA per group can be supported by using DNS resolution via -ruler.alertmanager-discovery.")
@@ -906,14 +910,19 @@ func (r *Ruler) getLocalRules(userID string, rulesRequest RulesRequest, includeB
 			}
 		}
 		interval := group.Interval()
+		var queryOffset *time.Duration
+		if offset := group.QueryOffset(); offset != 0 {
+			queryOffset = &offset
+		}
 
 		groupDesc := &GroupStateDesc{
 			Group: &rulespb.RuleGroupDesc{
-				Name:      group.Name(),
-				Namespace: string(decodedNamespace),
-				Interval:  interval,
-				User:      userID,
-				Limit:     int64(group.Limit()),
+				Name:        group.Name(),
+				Namespace:   string(decodedNamespace),
+				Interval:    interval,
+				QueryOffset: queryOffset,
+				User:        userID,
+				Limit:       int64(group.Limit()),
 			},
 
 			EvaluationTimestamp: group.GetLastEvaluation(),
@@ -1045,14 +1054,19 @@ func (r *Ruler) ruleGroupListToGroupStateDesc(userID string, backupGroups rulesp
 		if group.Interval != 0 {
 			interval = group.Interval
 		}
+		queryOffset := &r.cfg.RuleQueryOffset
+		if group.QueryOffset != nil {
+			queryOffset = group.QueryOffset
+		}
 
 		groupDesc := &GroupStateDesc{
 			Group: &rulespb.RuleGroupDesc{
-				Name:      group.GetName(),
-				Namespace: group.GetNamespace(),
-				Interval:  interval,
-				User:      userID,
-				Limit:     group.Limit,
+				Name:        group.GetName(),
+				Namespace:   group.GetNamespace(),
+				Interval:    interval,
+				QueryOffset: queryOffset,
+				User:        userID,
+				Limit:       group.Limit,
 			},
 			// We are keeping default value for EvaluationTimestamp and EvaluationDuration since the backup is not evaluating
 		}

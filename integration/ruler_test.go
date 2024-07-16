@@ -1243,15 +1243,17 @@ func createTestRuleGroup(t *testing.T) rulefmt.RuleGroup {
 	t.Helper()
 
 	var (
-		recordNode = yaml.Node{}
-		exprNode   = yaml.Node{}
+		recordNode  = yaml.Node{}
+		exprNode    = yaml.Node{}
+		queryOffset = model.Duration(200)
 	)
 
 	recordNode.SetString("test_rule")
 	exprNode.SetString("up")
 	return rulefmt.RuleGroup{
-		Name:     "test_encoded_+\"+group_name/?",
-		Interval: 100,
+		Name:        "test_encoded_+\"+group_name/?",
+		Interval:    100,
+		QueryOffset: &queryOffset,
 		Rules: []rulefmt.RuleNode{
 			{
 				Record: recordNode,

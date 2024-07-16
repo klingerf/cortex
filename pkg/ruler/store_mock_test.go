@@ -20,6 +20,7 @@ type mockRuleStore struct {
 var (
 	delim               = "/"
 	interval, _         = time.ParseDuration("1m")
+	queryOffset, _      = time.ParseDuration("30s")
 	mockRulesNamespaces = map[string]rulespb.RuleGroupList{
 		"user1": {
 			&rulespb.RuleGroupDesc{
@@ -36,7 +37,8 @@ var (
 						Expr:  "up < 1",
 					},
 				},
-				Interval: interval,
+				Interval:    interval,
+				QueryOffset: &queryOffset,
 			},
 			&rulespb.RuleGroupDesc{
 				Name:      "fail",
@@ -52,7 +54,8 @@ var (
 						Expr:  "up < 1",
 					},
 				},
-				Interval: interval,
+				Interval:    interval,
+				QueryOffset: &queryOffset,
 			},
 		},
 	}
@@ -72,7 +75,8 @@ var (
 						Expr:  "up < 1",
 					},
 				},
-				Interval: interval,
+				Interval:    interval,
+				QueryOffset: &queryOffset,
 			},
 		},
 		"user2": {
@@ -86,7 +90,8 @@ var (
 						Expr:   "up",
 					},
 				},
-				Interval: interval,
+				Interval:    interval,
+				QueryOffset: &queryOffset,
 			},
 		},
 	}
@@ -107,7 +112,8 @@ var (
 						Expr:  "up < 1",
 					},
 				},
-				Interval: interval,
+				Interval:    interval,
+				QueryOffset: &queryOffset,
 			},
 		},
 	}
@@ -128,7 +134,8 @@ var (
 						Expr:  "up < 1",
 					},
 				},
-				Interval: interval,
+				Interval:    interval,
+				QueryOffset: &queryOffset,
 			},
 		},
 	}
@@ -160,10 +167,11 @@ func (m *mockRuleStore) ListAllRuleGroups(_ context.Context) (map[string]rulespb
 	for k, v := range m.rules {
 		for _, r := range v {
 			result[k] = append(result[k], &rulespb.RuleGroupDesc{
-				Namespace: r.Namespace,
-				Name:      r.Name,
-				User:      k,
-				Interval:  r.Interval,
+				Namespace:   r.Namespace,
+				Name:        r.Name,
+				User:        k,
+				Interval:    r.Interval,
+				QueryOffset: r.QueryOffset,
 			})
 		}
 	}
@@ -182,10 +190,11 @@ func (m *mockRuleStore) ListRuleGroupsForUserAndNamespace(_ context.Context, use
 		}
 
 		result = append(result, &rulespb.RuleGroupDesc{
-			Namespace: r.Namespace,
-			Name:      r.Name,
-			User:      userID,
-			Interval:  r.Interval,
+			Namespace:   r.Namespace,
+			Name:        r.Name,
+			User:        userID,
+			Interval:    r.Interval,
+			QueryOffset: r.QueryOffset,
 		})
 	}
 	return result, nil

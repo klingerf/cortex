@@ -1054,6 +1054,7 @@ func TestGetRulesFromBackup(t *testing.T) {
 		cfg.ShardingStrategy = util.ShardingStrategyShuffle
 		cfg.EnableSharding = true
 		cfg.EvaluationInterval = 5 * time.Minute
+		cfg.RuleQueryOffset = 10 * time.Second
 
 		cfg.Ring = RingConfig{
 			InstanceID:   id,
@@ -1126,6 +1127,7 @@ func TestGetRulesFromBackup(t *testing.T) {
 
 	requireGroupStateEqual := func(a *GroupStateDesc, b *GroupStateDesc) {
 		require.Equal(t, a.Group.Interval, b.Group.Interval)
+		require.Equal(t, a.Group.QueryOffset, b.Group.QueryOffset)
 		require.Equal(t, a.Group.User, b.Group.User)
 		require.Equal(t, a.Group.Limit, b.Group.Limit)
 		require.Equal(t, a.EvaluationTimestamp, b.EvaluationTimestamp)
@@ -1783,6 +1785,7 @@ func Test_LoadPartialGroups(t *testing.T) {
 	cfg := Config{
 		EnableSharding:   true,
 		ExternalURL:      flagext.URLValue{URL: u},
+		RuleQueryOffset:  time.Second * 10,
 		PollInterval:     time.Millisecond * 100,
 		RingCheckPeriod:  time.Minute,
 		ShardingStrategy: util.ShardingStrategyShuffle,

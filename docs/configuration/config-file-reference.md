@@ -4108,6 +4108,11 @@ ruler_client:
 # CLI flag: -ruler.evaluation-interval
 [evaluation_interval: <duration> | default = 1m]
 
+# Offset the default rule evaluation timestamp by the specified duration into
+# the past to ensure that the underlying metrics have been received.
+# CLI flag: -ruler.rule-query-offset
+[rule_query_offset: <duration> | default = 0s]
+
 # How frequently to poll for rule changes
 # CLI flag: -ruler.poll-interval
 [poll_interval: <duration> | default = 1m]
